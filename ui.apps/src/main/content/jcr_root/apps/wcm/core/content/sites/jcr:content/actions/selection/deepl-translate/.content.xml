@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0"
+          xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+          xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
+          xmlns:granite="http://www.adobe.com/jcr/granite/1.0"
+    jcr:primaryType="nt:unstructured"
+    granite:class="foundation-collection-action,cq-siteadmin-admin-actions-properties-activator"
+    granite:rel="cq-siteadmin-admin-actions-deepl-translate-activator"
+    icon="globeCheck"
+    text="Translate with DeepL"
+    variant="actionBar"
+    sling:resourceType="granite/ui/components/coral/foundation/button"/>

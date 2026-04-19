@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    AEM Translation Rules for eon/de-service components.
+    Edit via: /libs/cq/translation/translationrules/contextproperties.html?context=/content
+-->
+<nodelist>
+
+    <!-- Page jcr:content properties (structure/page) -->
+    <node resourceType="eon/de-service/components/foundationNG/structure/page">
+        <property name="jcr:title"       translate="true"/>
+        <property name="jcr:description" translate="true"/>
+        <property name="navTitle"        translate="true"/>
+        <property name="pageTitle"       translate="true"/>
+        <property name="subtitle"        translate="true"/>
+    </node>
+
+    <!-- Headline component -->
+    <node resourceType="eon/de-service/components/foundationNG/content/headline">
+        <property name="headlineText"    translate="true"/>
+        <property name="subHeadline"     translate="true"/>
+    </node>
+
+    <!-- Text component (rich text) -->
+    <node resourceType="eon/de-service/components/foundationNG/content/text">
+        <property name="text"            translate="true"/>
+    </node>
+
+    <!-- TextTeaser component -->
+    <node resourceType="eon/de-service/components/foundationNG/content/textteaser">
+        <property name="headline"        translate="true"/>
+        <property name="subHeadline"     translate="true"/>
+        <property name="richText"        translate="true"/>
+        <property name="text"            translate="true"/>
+        <property name="ctaLabel"        translate="true"/>
+        <property name="linkText"        translate="true"/>
+    </node>
+
+    <!-- Stage component -->
+    <node resourceType="eon/de-service/components/foundationNG/content/stage">
+        <property name="headlineText"    translate="true"/>
+        <property name="subHeadline"     translate="true"/>
+        <property name="slotOneText"     translate="true"/>
+        <property name="slotTwoText"     translate="true"/>
+        <property name="ctaLabel"        translate="true"/>
+        <property name="linkText"        translate="true"/>
+    </node>
+
+    <!-- FlexibleOffsetTeaser component -->
+    <node resourceType="eon/de-service/components/foundationNG/content/flexibleoffsetteaser">
+        <property name="headline"        translate="true"/>
+        <property name="subHeadline"     translate="true"/>
+        <property name="richText"        translate="true"/>
+        <property name="text"            translate="true"/>
+        <property name="ctaLabel"        translate="true"/>
+        <property name="linkText"        translate="true"/>
+    </node>
+
+    <!-- TilesTeaser component -->
+    <node resourceType="eon/de-service/components/foundationNG/content/tilesteaser">
+        <property name="headline"        translate="true"/>
+        <property name="subHeadline"     translate="true"/>
+        <property name="text"            translate="true"/>
+        <property name="richText"        translate="true"/>
+        <property name="ctaLabel"        translate="true"/>
+        <property name="linkText"        translate="true"/>
+    </node>
+
+    <!-- Links component -->
+    <node resourceType="eon/de-service/components/foundationNG/content/links">
+        <property name="text"            translate="true"/>
+        <property name="linkText"        translate="true"/>
+        <property name="label"           translate="true"/>
+    </node>
+
+    <!-- Pictogram component -->
+    <node resourceType="eon/de-service/components/foundationNG/content/pictogram">
+        <property name="text"            translate="true"/>
+        <property name="headline"        translate="true"/>
+        <property name="label"           translate="true"/>
+    </node>
+
+    <!-- Box component -->
+    <node resourceType="eon/de-service/components/foundationNG/content/box">
+        <property name="headline"        translate="true"/>
+        <property name="text"            translate="true"/>
+        <property name="richText"        translate="true"/>
+    </node>
+
+    <!-- Core image (alt/title only) -->
+    <node resourceType="core/wcm/components/image/v3/image">
+        <property name="alt"             translate="true"/>
+        <property name="title"           translate="true"/>
+    </node>
+
+</nodelist>
+
+
+    <!-- Page-level jcr:content properties -->
+    <node path="/jcr:content">
+        <property name="jcr:title"       translate="true"/>
+        <property name="jcr:description" translate="true"/>
+        <property name="navTitle"        translate="true"/>
+        <property name="subtitle"        translate="true"/>
+        <property name="pageTitle"       translate="true"/>
+        <property name="hideInNav"       translate="false"/>
+    </node>
+
+    <!-- WCM Core Components – Text -->
+    <node resourceType="core/wcm/components/text/v2/text">
+        <property name="text" translate="true"/>
+    </node>
+    <node resourceType="core/wcm/components/text/v1/text">
+        <property name="text" translate="true"/>
+    </node>
+
+    <!-- WCM Core Components – Title -->
+    <node resourceType="core/wcm/components/title/v2/title">
+        <property name="jcr:title" translate="true"/>
+    </node>
+    <node resourceType="core/wcm/components/title/v3/title">
+        <property name="jcr:title" translate="true"/>
+    </node>
+
+    <!-- WCM Core Components – Teaser -->
+    <node resourceType="core/wcm/components/teaser/v1/teaser">
+        <property name="jcr:title"       translate="true"/>
+        <property name="jcr:description" translate="true"/>
+        <property name="pretitle"        translate="true"/>
+    </node>
+    <node resourceType="core/wcm/components/teaser/v2/teaser">
+        <property name="jcr:title"       translate="true"/>
+        <property name="jcr:description" translate="true"/>
+        <property name="pretitle"        translate="true"/>
+    </node>
+
+    <!-- WCM Core Components – Image -->
+    <node resourceType="core/wcm/components/image/v2/image">
+        <property name="alt"   translate="true"/>
+        <property name="title" translate="true"/>
+    </node>
+    <node resourceType="core/wcm/components/image/v3/image">
+        <property name="alt"   translate="true"/>
+        <property name="title" translate="true"/>
+    </node>
+
+    <!-- WCM Core Components – Button -->
+    <node resourceType="core/wcm/components/button/v1/button">
+        <property name="text" translate="true"/>
+    </node>
+    <node resourceType="core/wcm/components/button/v2/button">
+        <property name="text" translate="true"/>
+    </node>
+
+    <!-- WCM Core Components – List -->
+    <node resourceType="core/wcm/components/list/v2/list">
+        <property name="jcr:title" translate="true"/>
+    </node>
+
+    <!-- Generic fallback – common property names found across custom components -->
+    <node pathContains="/jcr:content">
+        <property name="title"       translate="true"/>
+        <property name="text"        translate="true"/>
+        <property name="description" translate="true"/>
+        <property name="label"       translate="true"/>
+        <property name="headline"    translate="true"/>
+        <property name="subheadline" translate="true"/>
+        <property name="bodyText"    translate="true"/>
+        <property name="ctaText"     translate="true"/>
+        <property name="linkText"    translate="true"/>
+        <property name="altText"     translate="true"/>
+        <property name="caption"     translate="true"/>
+        <property name="summary"     translate="true"/>
+        <property name="teaser"      translate="true"/>
+        <property name="eyebrow"     translate="true"/>
+    </node>
+
+</nodelist>
