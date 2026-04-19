@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0"
+          xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+          xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
+    jcr:primaryType="nt:unstructured"
+    jcr:title="Select Translation Language"
+    sling:resourceType="granite/ui/components/coral/foundation/dialog">
+    <content
+        jcr:primaryType="nt:unstructured"
+        sling:resourceType="granite/ui/components/coral/foundation/container">
+        <items jcr:primaryType="nt:unstructured">
+            <targetLanguage
+                jcr:primaryType="nt:unstructured"
+                sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                fieldLabel="Target Language"
+                fieldDescription="Select the language to translate the page content into."
+                name="targetLanguage"
+                required="{Boolean}true">
+                <items jcr:primaryType="nt:unstructured">
+                    <en  jcr:primaryType="nt:unstructured" text="English (EN)"    value="EN"/>
+                    <de  jcr:primaryType="nt:unstructured" text="German (DE)"     value="DE"/>
+                    <fr  jcr:primaryType="nt:unstructured" text="French (FR)"     value="FR"/>
+                    <es  jcr:primaryType="nt:unstructured" text="Spanish (ES)"    value="ES"/>
+                    <it  jcr:primaryType="nt:unstructured" text="Italian (IT)"    value="IT"/>
+                    <nl  jcr:primaryType="nt:unstructured" text="Dutch (NL)"      value="NL"/>
+                    <pl  jcr:primaryType="nt:unstructured" text="Polish (PL)"     value="PL"/>
+                    <pt  jcr:primaryType="nt:unstructured" text="Portuguese (PT)" value="PT"/>
+                </items>
+            </targetLanguage>
+        </items>
+    </content>
+</jcr:root>

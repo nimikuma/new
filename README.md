@@ -1,10 +1,47 @@
 # AEM DeepL Translator
 
-A plug-in for **Adobe Experience Manager (AEM)** that adds a **"Translate with DeepL"** button to the Sites console. When triggered, it:
+A plug-in for **Adobe Experience Manager (AEM)** that integrates [DeepL v2 AI translation](https://www.deepl.com/docs-api) into the Sites console.
 
-1. Creates a language copy of the selected page at the target language path
-2. Translates all text/rich-text properties using the [DeepL v2 API](https://www.deepl.com/docs-api)
-3. Writes translations back to JCR and commits — no workflow engine required
+Two independent trigger paths are supported — both create a language copy and translate it, but differ in how they are started and how the target language is chosen:
+
+| # | Trigger | Language selection | Execution model |
+|---|---|---|---|
+| 1 | **Sites console button** → "Translate with DeepL" | Coral 3 browser dialog | Synchronous (servlet) |
+| 2 | **Sites console** → "Create Workflow" → "DeepL AI Translation" | Dialog Participant Step in AEM Inbox | Asynchronous (workflow) |
+
+---
+
+## How It Works
+
+### Path 1 — Sites Console Button (Servlet)
+
+1. A clientlib (`cq.wcm.sites`) injects `translate-action.js` into the Sites console.
+2. The script adds a **"Translate with DeepL"** button to the action bar via a Sling overlay at  
+   `/apps/wcm/core/content/sites/jcr:content/actions/selection/deepl-translate`.
+3. Clicking the button opens a **Coral 3 dialog** with a language drop-down (EN / DE / FR / ES / IT / NL / PL / PT).
+4. On confirm, the browser POSTs to `POST /bin/oidc/translation/start` with `path[]` and `targetLanguage`.
+5. The servlet (`TranslationStartServlet`) uses the **caller's ResourceResolver** (no service user needed):
+   - Resolves the language root at depth 2 (e.g. `/content/site/en` → `/content/site/de`).
+   - Shallow-copies ancestor pages, then deep-copies the source page to the target path.
+   - Calls `DeepLTranslationService.translate(targetPath, targetLanguage, resolver)`.
+6. Returns JSON: `{"results":[{"path":"...","status":"completed","targetPath":"..."}]}`
+
+### Path 2 — Workflow (AEM Inbox)
+
+1. From the Sites console, choose **Create → Workflow** and select **"DeepL AI Translation"**.
+2. The workflow pauses at a **Dialog Participant Step** — an Inbox task appears for the `administrators` group.
+3. The assignee opens the task, picks the target language from a Granite UI select (`/apps/oidc/workflow/dialog/deepl-language-select`), and completes the step.
+4. The chosen language is stored in the **workflow metadata map** (`targetLanguage` key).
+5. **Step 2 — CreateLanguageCopyWorkflowProcess**: reads `targetLanguage` from the metadata map (falls back to `PROCESS_ARGS` if not set), creates the language copy.
+6. **Step 3 — DeepLWorkflowProcess**: reads the target path written by step 2, queues a `TranslationJob` via Sling Job Manager.
+
+### Translation Service (shared by both paths)
+
+- Walks the `jcr:content` tree; skips structural/config properties via `SKIP_PROPERTIES` and suffix rules.
+- Batches up to 50 000 characters per DeepL request.
+- Builds an XML payload: `<doc><t jcrPath="..." jcrProperty="...">value</t>...</doc>`
+- Sanitizes HTML values before sending (`<br>` → `<br/>`, `&nbsp;` → `&#160;`, etc.) to prevent DeepL XML parse errors.
+- Writes translated values back via `ModifiableValueMap`.
 
 ---
 
@@ -12,59 +49,53 @@ A plug-in for **Adobe Experience Manager (AEM)** that adds a **"Translate with D
 
 ```
 core/src/main/java/com/oidc/core/translation/deepl/
-├── client/          DeepLApiClient — low-level HTTP wrapper
 ├── config/          DeepLTranslationConfig — OSGi config interface
-├── jobs/            TranslationJob — background job support
-├── service/         DeepLTranslationService interface + HttpClientService interface
+├── jobs/            TranslationJob — Sling background job (workflow path)
+├── service/         DeepLTranslationService (interface) + HttpClientService (interface)
 │   └── impl/        DeepLTranslationServiceImpl + HttpClientServiceImpl
-├── servlet/         TranslationStartServlet — POST /bin/oidc/translation/start
-└── workflows/       CreateLanguageCopyWorkflowProcess + DeepLWorkflowProcess
+├── servlet/         TranslationStartServlet — POST /bin/oidc/translation/start (button path)
+└── workflows/       CreateLanguageCopyWorkflowProcess + DeepLWorkflowProcess (workflow path)
 
-ui.apps/
-└── apps/
-    ├── oidc/clientlibs/deepl-translation/
-    │   ├── .content.xml        clientlib node (category: cq.wcm.sites)
-    │   ├── js.txt
-    │   └── translate-action.js Coral 3 dialog + Sites console button handler
-    └── wcm/core/content/sites/jcr:content/actions/selection/deepl-translate/
-        └── .content.xml        Sites console action bar button overlay
+ui.apps/src/main/content/jcr_root/apps/
+├── oidc/
+│   ├── clientlibs/deepl-translation/
+│   │   ├── .content.xml          clientlib node (category: cq.wcm.sites)
+│   │   ├── js.txt
+│   │   └── translate-action.js   Sites console button + Coral 3 dialog
+│   └── workflow/dialog/deepl-language-select/
+│       └── .content.xml          Granite UI dialog for the Inbox Participant Step
+└── wcm/core/content/sites/jcr:content/actions/selection/deepl-translate/
+    └── .content.xml              Sites console action bar button overlay
 
-ui.config/
-└── apps/oidc/osgiconfig/
-    ├── config/       ServiceUserMapper amendment (deepl-translation-service)
-    └── config.author/ DeepLTranslationConfig.cfg.json (API key, language, etc.)
+ui.config/src/main/content/jcr_root/apps/oidc/osgiconfig/
+├── config/          ServiceUserMapper amendment (deepl-translation-service)
+└── config.author/   DeepLTranslationConfig.cfg.json
 
-ui.content/
-└── conf/global/settings/translation/rules/translation_rules.xml
-└── var/workflow/models/deepl-translation-workflow/.content.xml
+ui.content/src/main/content/jcr_root/var/workflow/models/
+└── deepl-translation-workflow/.content.xml   5-node workflow model
 ```
 
 ---
 
-## How It Works
+## Workflow Model
 
-### Sites Console Button
-The clientlib (`cq.wcm.sites`) injects `translate-action.js` which listens for clicks on `.cq-siteadmin-admin-actions-deepl-translate-activator`. A Coral 3 dialog opens with a language selector.
+```
+START → [Participant: Select Language] → [Process: CreateLanguageCopy] → [Process: DeepL] → END
+```
 
-### Servlet (`POST /bin/oidc/translation/start`)
-Parameters: `path` (repeatable), `targetLanguage` (e.g. `EN`, `DE`, `FR`)
-
-For each path:
-1. **Language copy** — resolves language root at depth 2 (e.g. `/content/site/de` → `/content/site/en`), shallow-copies ancestor pages, deep-copies source page to target path
-2. **Translation** — `DeepLTranslationService.translate(targetPath, targetLanguage, resolver)` uses the caller's resolver directly (no service user required)
-
-### Translation Service
-- Walks `jcr:content` tree, skips non-text properties via `SKIP_PROPERTIES` + suffix rules
-- Batches up to 50,000 chars per DeepL request
-- Builds XML payload `<doc><t jcrPath="..." jcrProperty="...">value</t>...</doc>`
-- Sanitizes HTML values to valid XML before sending (`<br>` → `<br/>`, `&nbsp;` → `&#160;`, etc.)
-- Parses response and writes translated values back via `ModifiableValueMap`
+| Node | Type | Detail |
+|---|---|---|
+| `node0` | START | — |
+| `node1` | PARTICIPANT | Dialog: `/apps/oidc/workflow/dialog/deepl-language-select`, assignee: `administrators` |
+| `node2` | PROCESS | `CreateLanguageCopyWorkflowProcess` — reads `targetLanguage` from metadata |
+| `node3` | PROCESS | `DeepLWorkflowProcess` — queues translation job |
+| `node4` | END | — |
 
 ---
 
 ## Configuration
 
-Deploy `ui.config/src/main/content/jcr_root/apps/oidc/osgiconfig/config.author/com.oidc.core.translation.deepl.config.DeepLTranslationConfig.cfg.json`:
+`ui.config/.../config.author/com.oidc.core.translation.deepl.config.DeepLTranslationConfig.cfg.json`:
 
 ```json
 {
@@ -72,11 +103,12 @@ Deploy `ui.config/src/main/content/jcr_root/apps/oidc/osgiconfig/config.author/c
   "apiKey": "YOUR_DEEPL_API_KEY",
   "useFreePlan": true,
   "serviceUser": "deepl-translation-service",
-  "translate_child_pages": false
+  "translate.child.pages": true
 }
 ```
 
-For AEM as a Cloud Service, use Cloud Manager secret variables:
+For AEM as a Cloud Service, use Cloud Manager secret variables instead of a hard-coded key:
+
 ```json
 {
   "apiKey": "$[secret:DEEPL_API_KEY]"
@@ -87,15 +119,31 @@ For AEM as a Cloud Service, use Cloud Manager secret variables:
 
 ## Supported Target Languages
 
-`EN`, `DE`, `FR`, `ES`, `IT`, `NL`, `PL`, `PT`
+`EN` `DE` `FR` `ES` `IT` `NL` `PL` `PT`
 
-DeepL's free plan supports all of these. See [DeepL language codes](https://www.deepl.com/docs-api/translate-text/request/) for the full list.
+DeepL's free plan supports all of these. See the [DeepL language code reference](https://www.deepl.com/docs-api/translate-text/request/) for the full list.
 
 ---
 
 ## Dependencies
 
-Add to your `core/pom.xml`:
-- `com.adobe.aem:aem-sdk-api` (provided)
-- `org.apache.httpcomponents:httpclient`
-- `com.google.code.gson:gson`
+Add to `core/pom.xml`:
+
+```xml
+<!-- AEM SDK (provided) -->
+<dependency>
+  <groupId>com.adobe.aem</groupId>
+  <artifactId>aem-sdk-api</artifactId>
+  <scope>provided</scope>
+</dependency>
+<!-- HTTP client for DeepL API calls -->
+<dependency>
+  <groupId>org.apache.httpcomponents</groupId>
+  <artifactId>httpclient</artifactId>
+</dependency>
+<!-- JSON parsing -->
+<dependency>
+  <groupId>com.google.code.gson</groupId>
+  <artifactId>gson</artifactId>
+</dependency>
+```

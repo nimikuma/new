@@ -61,7 +61,16 @@ public class CreateLanguageCopyWorkflowProcess implements WorkflowProcess {
 
         final String sourcePath  = workItem.getWorkflowData().getPayload().toString();
         final String processArgs = StringUtils.defaultString(args.get("PROCESS_ARGS", String.class));
-        final String targetLang  = parseTargetLanguage(processArgs).toLowerCase(); // e.g. "en"
+
+        // Language resolution priority:
+        //  1. Dialog Participant Step — user picked via Inbox form (name="targetLanguage")
+        //  2. PROCESS_ARGS on this step (e.g. "targetLanguage=EN" — hardcoded in workflow model)
+        //  3. Falls back to "en" inside parseTargetLanguage()
+        final String langFromDialog = workItem.getWorkflow().getWorkflowData()
+                .getMetaDataMap().get("targetLanguage", String.class);
+        final String targetLang = StringUtils.isNotBlank(langFromDialog)
+                ? langFromDialog.trim().toLowerCase()
+                : parseTargetLanguage(processArgs).toLowerCase();
 
         final ResourceResolver resolver = workflowSession.adaptTo(ResourceResolver.class);
         if (resolver == null) {
