@@ -45,6 +45,59 @@ Two independent trigger paths are supported — both create a language copy and 
 
 ---
 
+## Required Files per Approach
+
+### Servlet approach (Sites console button)
+
+| File | Purpose |
+|---|---|
+| `core/.../servlet/TranslationStartServlet.java` | Handles `POST /bin/oidc/translation/start`; creates language copy and calls translation service |
+| `core/.../service/DeepLTranslationService.java` | Service interface (includes the `translate(path, lang, resolver)` overload) |
+| `core/.../service/impl/DeepLTranslationServiceImpl.java` | Calls DeepL API, walks JCR tree, writes translations back |
+| `core/.../service/HttpClientService.java` + `impl/HttpClientServiceImpl.java` | OSGi HTTP client wrapper |
+| `core/.../config/DeepLTranslationConfig.java` | OSGi config interface (API key, free plan flag, etc.) |
+| `ui.apps/.../clientlibs/deepl-translation/translate-action.js` | Sites console button + Coral 3 language dialog in the browser |
+| `ui.apps/.../clientlibs/deepl-translation/.content.xml` | Registers clientlib under category `cq.wcm.sites` |
+| `ui.apps/.../clientlibs/deepl-translation/js.txt` | Clientlib JS include list |
+| `ui.apps/.../actions/selection/deepl-translate/.content.xml` | Sling overlay that adds the button to the Sites console action bar |
+| `ui.config/.../config.author/DeepLTranslationConfig.cfg.json` | OSGi config: API key, service user, etc. |
+
+> The servlet approach does **not** need service user mapping because it uses the logged-in user's ResourceResolver directly.
+
+---
+
+### Workflow approach (AEM Inbox)
+
+| File | Purpose |
+|---|---|
+| `core/.../workflows/CreateLanguageCopyWorkflowProcess.java` | Workflow process step: reads `targetLanguage` from metadata map, creates language copy |
+| `core/.../workflows/DeepLWorkflowProcess.java` | Workflow process step: queues a Sling `TranslationJob` via Job Manager |
+| `core/.../jobs/TranslationJob.java` | Sling Job consumer that performs the actual DeepL translation asynchronously |
+| `core/.../service/DeepLTranslationService.java` | Service interface |
+| `core/.../service/impl/DeepLTranslationServiceImpl.java` | Calls DeepL API, walks JCR tree, writes translations back |
+| `core/.../service/HttpClientService.java` + `impl/HttpClientServiceImpl.java` | OSGi HTTP client wrapper |
+| `core/.../config/DeepLTranslationConfig.java` | OSGi config interface |
+| `ui.apps/.../workflow/dialog/deepl-language-select/.content.xml` | Granite UI dialog shown in AEM Inbox (Participant Step language selector) |
+| `ui.content/.../deepl-translation-workflow/.content.xml` | 5-node workflow model (START → Participant → CreateLanguageCopy → DeepL → END) |
+| `ui.config/.../config/ServiceUserMapperImpl.amended~deepl-translation.cfg.json` | Maps `deepl-translation-service` system user (needed by `TranslationJob`) |
+| `ui.config/.../config.author/DeepLTranslationConfig.cfg.json` | OSGi config: API key, service user, etc. |
+
+> The workflow approach uses a **service user** (`deepl-translation-service`) inside the async `TranslationJob` because the job runs outside the original HTTP request context.
+
+---
+
+### Shared files (required by both approaches)
+
+| File | Purpose |
+|---|---|
+| `core/.../service/DeepLTranslationService.java` | Common interface |
+| `core/.../service/impl/DeepLTranslationServiceImpl.java` | Core translation logic |
+| `core/.../service/HttpClientService.java` + `impl/HttpClientServiceImpl.java` | HTTP client |
+| `core/.../config/DeepLTranslationConfig.java` | Config interface |
+| `ui.config/.../config.author/DeepLTranslationConfig.cfg.json` | API key + feature flags |
+
+---
+
 ## File Structure
 
 ```
